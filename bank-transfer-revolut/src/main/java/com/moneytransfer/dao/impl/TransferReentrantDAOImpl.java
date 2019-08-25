@@ -31,7 +31,7 @@ public class TransferReentrantDAOImpl implements TransferReentrantDAO{
 	//Object lock=new Object();
     BankAccountImpl accountImpl = new BankAccountImpl();
     private int result=0;
-    ReentrantLock lock= new ReentrantLock();
+    static ReentrantLock lock= new ReentrantLock();
     
 	
     public int transferReentrantFund(UserTransaction transaction) throws CustomException{
@@ -42,7 +42,7 @@ public class TransferReentrantDAOImpl implements TransferReentrantDAO{
     this.sourceAccountNumber = transaction.getFromAccountId();
     this.destinationAccountNumber = transaction.getToAccountId();
     this.currencyCode=transaction.getCurrencyCode();
-    System.out.println(Thread.currentThread().getName() + " transferring");
+    //System.out.println(Thread.currentThread().getName() + " transferring");
     int result = -1;
 	Connection conn = null;
 	PreparedStatement lockStmt = null;
@@ -148,28 +148,44 @@ public class TransferReentrantDAOImpl implements TransferReentrantDAO{
  }
     
         public static boolean debit(BigDecimal money, Account fromAccount ) throws CustomException {
-    	BigDecimal fromAccountLeftOver = fromAccount.getBalance().subtract(money);
-    	System.out.println(Thread.currentThread().getName() + " :: " + fromAccount.getUserName() + " says ::"+ fromAccountLeftOver + " Debited Success Fully" );
-		if (fromAccountLeftOver.compareTo(MoneyUtil.zeroAmount) < 0) {
-			throw new CustomException("Not enough Fund from source Account ");
-		} else {
-			try {
-				//Extra processing time!!
-				fromAccount.setBalance(fromAccountLeftOver);
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            return true;
-		}
+        	if(lock.tryLock()) {
+        		try {
+        		BigDecimal fromAccountLeftOver = fromAccount.getBalance().subtract(money);
+            	System.out.println(Thread.currentThread().getName() + " :: " + fromAccount.getUserName() + " says ::"+ fromAccountLeftOver + " Debited Success Fully" );
+        		if (fromAccountLeftOver.compareTo(MoneyUtil.zeroAmount) < 0) {
+        			throw new CustomException("Not enough Fund from source Account ");
+        		} else {
+        			try {
+        				//Extra processing time!!
+        				fromAccount.setBalance(fromAccountLeftOver);
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    
+        		}
+        		} catch(Exception e) {
+        			e.printStackTrace();
+        		}finally {
+        			lock.unlock();
+        		}
+        }
+			return true;
+    	
     }
 
 public void credit(BigDecimal money, Account toAccount) {
-
+	if(lock.tryLock()) {
+		try {
 	BigDecimal creditedAmount=toAccount.getBalance().add(money);
 	toAccount.setBalance(creditedAmount);
 
 	System.out.println(Thread.currentThread().getName() + " :: " + toAccount.getUserName() + " says ::"+ creditedAmount + " Debited Success Fully" );
+		} catch(Exception e) {
+			e.printStackTrace();
+		}finally {
+			lock.unlock();
+		}}
 }
 
 	
