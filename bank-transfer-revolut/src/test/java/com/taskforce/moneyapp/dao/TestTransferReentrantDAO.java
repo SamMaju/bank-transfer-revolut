@@ -130,7 +130,7 @@ public class TestTransferReentrantDAO {
 					e.printStackTrace();
 				}
 				executorService.submit(a);
-				executorService.submit(b);
+				//executorService.submit(b);
 			}
 		
 		

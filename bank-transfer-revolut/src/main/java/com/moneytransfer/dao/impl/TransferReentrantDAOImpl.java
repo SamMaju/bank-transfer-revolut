@@ -121,7 +121,7 @@ public class TransferReentrantDAOImpl implements TransferReentrantDAO{
 		 			// If there is no error, commit the transaction
 		 			conn.commit();
     	}else{
-		    System.out.println(Thread.currentThread().getName() + " says fail to accuire both lock Try again");
+		   // System.out.println(Thread.currentThread().getName() + " says fail to accuire both lock Try again");
 		    transferReentrantFund(transaction);//try again
     	}
     }
